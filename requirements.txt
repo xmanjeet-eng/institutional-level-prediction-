@@ -7,3 +7,4 @@ xgboost
 pytz
 gunicorn
 requests
+scikit-learn
