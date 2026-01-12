@@ -3,48 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="60">
-    <title>Quantum Terminal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Pro-Trader Dashboard | Nifty & Bank Nifty</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #010409; color: #c9d1d9; font-family: 'Segoe UI', sans-serif; }
-        .card { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; }
-        .live-orb { height: 10px; width: 10px; background: #238636; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(35, 134, 54, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(35, 134, 54, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(35, 134, 54, 0); } }
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .card { background-color: #1e293b; border: none; border-radius: 12px; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); }
+        .signal-buy { color: #22c55e; font-weight: 800; }
+        .signal-sell { color: #ef4444; font-weight: 800; }
+        .signal-neutral { color: #f59e0b; font-weight: 800; }
+        .badge-strength { font-size: 0.9rem; padding: 0.5em 1em; }
+        .metric-label { color: #94a3b8; font-size: 0.85rem; text-transform: uppercase; }
+        .price-display { font-size: 2.5rem; font-weight: 700; color: #ffffff; }
+        .border-bottom-slate { border-bottom: 1px solid #334155; }
     </style>
 </head>
-<body class="p-4 md:p-10">
-    <div class="max-w-3xl mx-auto">
-        <div class="flex justify-between items-center mb-10">
-            <h1 class="text-2xl font-black text-blue-500 uppercase">Quantum<span class="text-white">Algo</span></h1>
-            <div class="text-right text-[10px] font-bold uppercase tracking-tighter">
-                <span class="live-orb mr-2"></span> Market Live | <span id="timer">60</span>s
+<body>
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h1 class="fw-bold mb-0">Market Predictor <span class="text-primary">v2.0</span></h1>
+                <p class="text-muted">Institutional Confluence Model (5M Timeframe)</p>
+            </div>
+            <div class="text-end">
+                <div class="badge bg-primary px-3 py-2">LIVE IST: {{ time }}</div>
             </div>
         </div>
 
-        {% for m in [n, b] %}
-        <div class="card p-6 mb-6">
-            <div class="flex justify-between mb-4">
-                <span class="text-xs font-bold text-gray-500 uppercase">{{ m.name }}</span>
-                <span class="text-[10px] px-2 py-1 rounded bg-blue-900/20 text-blue-400 font-bold uppercase">{{ m.sig }}</span>
-            </div>
-            <div class="flex justify-between items-end">
-                <div>
-                    <p class="text-4xl font-black tracking-tighter">₹{{ m.price }}</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-[9px] text-gray-500 font-bold uppercase">AI Prediction</p>
-                    <p class="text-2xl font-bold {{ 'text-green-500' if m.chg > 0 else 'text-red-500' }}">₹{{ m.pred }}</p>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
+        <div class="row g-4">
+            {% for data in [n, b] %}
+            <div class="col-md-6">
+                <div class="card p-4 shadow-lg">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h2 class="h4 mb-0">{{ data.name }}</h2>
+                        <span class="badge badge-strength {% if data.trend_strength == 'STRONG' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                            Trend: {{ data.trend_strength }}
+                        </span>
+                    </div>
 
-        <script>
-            let t = 60; setInterval(() => { t--; if(t>=0) document.getElementById('timer').innerText=t; }, 1000);
-        </script>
+                    <div class="price-display mb-2">₹{{ data.price }}</div>
+                    
+                    <div class="mb-4">
+                        <span class="{% if 'BUY' in data.signal %}signal-buy{% elif 'SELL' in data.signal %}signal-sell{% else %}signal-neutral{% endif %} h5">
+                            {{ data.signal }}
+                        </span>
+                    </div>
+
+                    <div class="row text-center bg-black bg-opacity-25 rounded py-3 g-2">
+                        <div class="col-4 border-end border-secondary">
+                            <div class="metric-label">Target</div>
+                            <div class="fw-bold text-info">₹{{ data.target }}</div>
+                        </div>
+                        <div class="col-4 border-end border-secondary">
+                            <div class="metric-label">Stop Loss</div>
+                            <div class="fw-bold text-danger">₹{{ data.stoploss }}</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="metric-label">RSI (14)</div>
+                            <div class="fw-bold">{{ data.rsi }}</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="metric-label">Predictability Score</span>
+                            <span class="fw-bold">{{ data.up_prob }}% Accuracy</span>
+                        </div>
+                        <div class="progress" style="height: 10px; background-color: #334155;">
+                            <div class="progress-bar {% if data.up_prob > 60 %}bg-success{% elif data.up_prob < 40 %}bg-danger{% else %}bg-warning{% endif %}" 
+                                 role="progressbar" style="width: {{ data.up_prob }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="mt-5 p-4 rounded bg-info bg-opacity-10 border border-info">
+            <h5 class="text-info fw-bold">Trading Note:</h5>
+            <p class="small mb-0 text-info">
+                Accuracy is highest when <strong>Trend Strength</strong> is STRONG and <strong>VWAP</strong> alignment is present. 
+                Avoid taking trades if the signal is NEUTRAL or if the time is between 1:30 PM and 2:15 PM (European market opening volatility).
+            </p>
+        </div>
     </div>
 </body>
 </html>
